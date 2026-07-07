@@ -13,8 +13,6 @@ const windowConfig: DesktopWindowConfig = {
   height: 800,
 };
 
-const youtubeMusicUrlJson = JSON.stringify(YOUTUBE_MUSIC_URL);
-
 const fallbackHtml = `<!doctype html>
 <html lang="en">
   <head>
@@ -32,31 +30,96 @@ const fallbackHtml = `<!doctype html>
         min-height: 100vh;
         margin: 0;
         place-items: center;
-        background: #0f0f0f;
-        color: #fff;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at center, rgba(255, 0, 0, 0.12), transparent 18rem),
+          #030303;
       }
 
-      main {
-        width: min(32rem, calc(100vw - 3rem));
-        text-align: center;
+      .splash {
+        position: relative;
+        display: grid;
+        width: 12rem;
+        aspect-ratio: 1;
+        place-items: center;
       }
 
-      a {
-        color: #ff5a5f;
+      .splash::before,
+      .splash::after {
+        position: absolute;
+        inset: 0;
+        border: 2px solid rgba(255, 255, 255, 0.16);
+        border-radius: 50%;
+        content: "";
+        animation: pulse 1.8s ease-out infinite;
+      }
+
+      .splash::after {
+        animation-delay: 0.9s;
+      }
+
+      .logo {
+        position: relative;
+        z-index: 1;
+        width: 7.5rem;
+        height: 7.5rem;
+        animation: breathe 1.8s ease-in-out infinite;
+        filter: drop-shadow(0 1.5rem 3rem rgba(255, 0, 0, 0.3));
+      }
+
+      .orbit {
+        animation: spin 2.8s linear infinite;
+        transform-origin: 50% 50%;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0;
+          transform: scale(0.64);
+        }
+
+        35% {
+          opacity: 1;
+        }
+
+        100% {
+          opacity: 0;
+          transform: scale(1.15);
+        }
+      }
+
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scale(0.96);
+        }
+
+        50% {
+          transform: scale(1.04);
+        }
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
     </style>
-    <script>
-      setTimeout(() => {
-        globalThis.location.replace(${youtubeMusicUrlJson});
-      }, 100);
-    </script>
   </head>
   <body>
-    <main>
-      <h1>YouTube Music Desktop</h1>
-      <p>The native window is starting and will navigate to YouTube Music.</p>
-      <p><a href="${YOUTUBE_MUSIC_URL}">Open YouTube Music</a></p>
-    </main>
+    <div class="splash" aria-label="YouTube Music">
+      <svg class="logo" viewBox="0 0 128 128" role="img" aria-hidden="true">
+        <circle cx="64" cy="64" r="58" fill="#ff0000"/>
+        <circle cx="64" cy="64" r="43" fill="#ff3333"/>
+        <circle cx="64" cy="64" r="31" fill="#ffffff"/>
+        <circle cx="64" cy="64" r="24" fill="#ff0000"/>
+        <path fill="#ffffff" d="M57 48l27 16-27 16z"/>
+        <g class="orbit" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-width="4">
+          <path d="M64 6a58 58 0 0 1 58 58"/>
+          <path d="M64 122A58 58 0 0 1 6 64"/>
+        </g>
+      </svg>
+    </div>
   </body>
 </html>`;
 
@@ -82,15 +145,31 @@ const clientCss = `
   }
 `;
 
-const clientTweakScript = `(() => {
-  if (globalThis.location.origin !== "https://music.youtube.com") {
+const clientReadyScript = `(() => {
+  const styleId = "deno-youtube-music-desktop-style";
+  const supportedOrigins = new Set([
+    "https://music.youtube.com",
+    "https://accounts.google.com",
+  ]);
+
+  if (!supportedOrigins.has(globalThis.location.origin) || document.readyState === "loading") {
     throw new Error("YouTube Music has not loaded yet.");
   }
 
-  const styleId = "deno-youtube-music-desktop-style";
+  const hasVisibleSurface =
+    globalThis.location.origin === "https://music.youtube.com"
+      ? document.querySelector("ytmusic-app") !== null
+      : document.querySelector("form, input[type=email], input[type=password]") !== null;
+
+  if (!hasVisibleSurface) {
+    throw new Error("YouTube Music is not ready yet.");
+  }
 
   const applyStyle = () => {
-    if (document.getElementById(styleId)) {
+    if (
+      globalThis.location.origin !== "https://music.youtube.com" ||
+      document.getElementById(styleId)
+    ) {
       return;
     }
 
@@ -101,28 +180,25 @@ const clientTweakScript = `(() => {
     document.documentElement.append(style);
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", applyStyle, { once: true });
-  } else {
-    applyStyle();
-  }
+  applyStyle();
 })();`;
 
 const delay = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-async function injectClientTweaks(window: Deno.BrowserWindow): Promise<void> {
+async function waitForClientReady(window: Deno.BrowserWindow): Promise<boolean> {
   for (let attempt = 0; attempt < 120; attempt += 1) {
     try {
       // executeJs runs inside the loaded webview page, not inside the Deno runtime.
-      await window.executeJs(clientTweakScript);
-      return;
+      await window.executeJs(clientReadyScript);
+      return true;
     } catch {
       await delay(500);
     }
   }
 
-  console.warn("Timed out while waiting to inject YouTube Music client tweaks.");
+  console.warn("Timed out while waiting for YouTube Music to load.");
+  return false;
 }
 
 const server = Deno.serve((request: Request): Response => {
@@ -151,21 +227,45 @@ const server = Deno.serve((request: Request): Response => {
   });
 });
 
+let serverShutdownStarted = false;
+
+function shutdownServer(): void {
+  if (serverShutdownStarted) {
+    return;
+  }
+
+  serverShutdownStarted = true;
+  void server.shutdown();
+}
+
 // The first BrowserWindow adopts the startup window created by deno desktop.
-const window = new Deno.BrowserWindow({
+const splashWindow = new Deno.BrowserWindow({
   title: windowConfig.title,
   width: windowConfig.width,
   height: windowConfig.height,
 });
 
-window.addEventListener("close", () => {
-  // Closing the local server lets the Deno runtime exit after the last window closes.
-  void server.shutdown();
+const appWindow = new Deno.BrowserWindow({
+  title: windowConfig.title,
+  width: windowConfig.width,
+  height: windowConfig.height,
 });
 
-// deno desktop first auto-loads the local Deno.serve() root. Navigate after that
-// startup navigation has a chance to finish so it does not overwrite this URL.
+appWindow.hide();
+
+splashWindow.addEventListener("close", () => {
+  shutdownServer();
+});
+
+appWindow.addEventListener("close", () => {
+  shutdownServer();
+});
+
+// The visible startup window keeps the splash animation running while YouTube Music loads offscreen.
 setTimeout(() => {
-  window.navigate(YOUTUBE_MUSIC_URL);
-  void injectClientTweaks(window);
+  appWindow.navigate(YOUTUBE_MUSIC_URL);
+  void waitForClientReady(appWindow).then(() => {
+    appWindow.show();
+    splashWindow.close();
+  });
 }, 750);

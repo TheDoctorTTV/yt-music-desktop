@@ -13,6 +13,9 @@ const appDirPath = new URL(`../dist/appimage/${APP_NAME}`, import.meta.url).path
 const appImagePath = new URL(`../dist/appimage/${APP_NAME}.AppImage`, import.meta.url).pathname;
 const toolPath = new URL("../.tools/appimagetool-x86_64.AppImage", import.meta.url).pathname;
 const iconPath = new URL("../icons/youtubemusic.png", import.meta.url).pathname;
+const cookieHookSourcePath = new URL("./ytmusic_cookie_hook.c", import.meta.url).pathname;
+const cookieHookBuildPath = new URL("../.tools/ytmusic-cookie-hook.so", import.meta.url).pathname;
+const cookieHookFile = "ytmusic-cookie-hook.so";
 
 const youtubeMusicHosts = [
   "127.0.0.1",
@@ -65,6 +68,26 @@ async function buildLinuxDirectory(outputPath: string): Promise<void> {
   ]);
 }
 
+async function buildCookieHook(): Promise<void> {
+  await Deno.mkdir(new URL("../.tools", import.meta.url), { recursive: true });
+
+  await run("cc", [
+    "-shared",
+    "-fPIC",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-o",
+    cookieHookBuildPath,
+    cookieHookSourcePath,
+    "-ldl",
+  ]);
+}
+
+async function copyCookieHook(appPath: string): Promise<void> {
+  await Deno.copyFile(cookieHookBuildPath, `${appPath}/${cookieHookFile}`);
+}
+
 async function patchLauncher(appPath: string): Promise<void> {
   const launcherPath = `${appPath}/${APP_NAME}`;
   const marker = "# YouTube Music Desktop WebKitGTK runtime environment";
@@ -84,6 +107,7 @@ async function patchLauncher(appPath: string): Promise<void> {
     'export XDG_DATA_HOME="$YTMUSIC_PROFILE_DIR/data"',
     'export XDG_CACHE_HOME="$YTMUSIC_PROFILE_DIR/cache"',
     'export XDG_CONFIG_HOME="$YTMUSIC_PROFILE_DIR/config"',
+    `export LD_PRELOAD="$DIR/${cookieHookFile}\${LD_PRELOAD:+:$LD_PRELOAD}"`,
     `export LAUFEY_APP_ID="\${LAUFEY_APP_ID:-${APP_ID}}"`,
     `export LAUFEY_APP_NAME="\${LAUFEY_APP_NAME:-${APP_DISPLAY_NAME}}"`,
     `export LAUFEY_APP_ICON="\${LAUFEY_APP_ICON:-$DIR/${APP_ICON_FILE}}"`,
@@ -156,6 +180,8 @@ if (mode !== "appimage") {
 }
 
 await buildLinuxDirectory(appDirPath);
+await buildCookieHook();
+await copyCookieHook(appDirPath);
 await patchLauncher(appDirPath);
 await patchDesktopMetadata(appDirPath);
 await ensureAppRun(appDirPath);

@@ -39,9 +39,12 @@ YouTube Music cookies and login state persist between app launches.
 deno task build:windows
 ```
 
-The Windows build is written to:
+The Windows task first builds Deno Desktop's normal Windows folder bundle, then packages that bundle
+into one launcher `.exe`. The single-file Windows build is written to:
 
 ```text
 dist/windows/youtube-music-desktop.exe
 ```
 
+The intermediate Deno Desktop folder remains in `dist/windows/youtube-music-desktop/` for
+inspection, but the top-level `.exe` is the file to distribute.
