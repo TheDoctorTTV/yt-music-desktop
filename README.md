@@ -8,8 +8,11 @@ An unofficial YouTube Music desktop app built with Deno Desktop.
 deno task dev
 ```
 
-The dev task uses WebKitGTK through XWayland, disables the DMABUF renderer, and points WebKitGTK at
-the same persistent app profile paths used by the AppImage build.
+The dev task prefers WebKitGTK's native Wayland backend, falls back to X11 when Wayland is
+unavailable, and points WebKitGTK at the same persistent app profile paths used by the AppImage
+build. The DMA-BUF renderer remains enabled so WebKitGTK can use GPU-backed rendering. NVIDIA
+explicit sync is disabled to avoid WebKitGTK's Wayland protocol-error crash while retaining GPU
+rendering.
 
 ## AppImage Build
 
@@ -17,9 +20,11 @@ the same persistent app profile paths used by the AppImage build.
 deno task build:appimage
 ```
 
-The AppImage task builds an unpacked Deno Desktop app first, patches the generated Linux launcher
-with the WebKitGTK runtime environment needed on KDE Wayland/NVIDIA, then packages that patched app
-directory with `appimagetool`. On the first run it downloads `appimagetool` into `.tools/`.
+The AppImage task builds an unpacked Deno Desktop app first, adds a launcher that prefers native
+Wayland with an X11 fallback and keeps WebKitGTK's DMA-BUF renderer enabled, then packages that app
+directory with `appimagetool`. On NVIDIA systems, the launcher applies the explicit-sync workaround
+required by WebKitGTK; other GPUs are unaffected. On the first run it downloads `appimagetool` into
+`.tools/`.
 
 The AppImage is written to:
 

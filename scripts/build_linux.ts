@@ -88,20 +88,18 @@ async function copyCookieHook(appPath: string): Promise<void> {
   await Deno.copyFile(cookieHookBuildPath, `${appPath}/${cookieHookFile}`);
 }
 
-async function patchLauncher(appPath: string): Promise<void> {
+async function createLauncherWrapper(appPath: string): Promise<void> {
   const launcherPath = `${appPath}/${APP_NAME}`;
-  const marker = "# YouTube Music Desktop WebKitGTK runtime environment";
-  const original = await Deno.readTextFile(launcherPath);
-
-  if (original.includes(marker)) {
-    return;
-  }
-
-  const anchor = `export LAUFEY_RUNTIME_PATH="$DIR/${APP_NAME}.so"\n`;
-  const environment = [
-    anchor.trimEnd(),
+  const binaryFile = `${APP_NAME}.bin`;
+  const binaryPath = `${appPath}/${binaryFile}`;
+  const wrapper = [
+    "#!/bin/sh",
+    "set -eu",
     "",
-    marker,
+    'DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"',
+    `export LAUFEY_RUNTIME_PATH="$DIR/${APP_NAME}.so"`,
+    "",
+    "# YouTube Music Desktop WebKitGTK runtime environment",
     'export YTMUSIC_PROFILE_DIR="${YTMUSIC_PROFILE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/net.thedoctorttv.ytmusicdesktop}"',
     'mkdir -p "$YTMUSIC_PROFILE_DIR/data" "$YTMUSIC_PROFILE_DIR/cache" "$YTMUSIC_PROFILE_DIR/config"',
     'export XDG_DATA_HOME="$YTMUSIC_PROFILE_DIR/data"',
@@ -111,16 +109,18 @@ async function patchLauncher(appPath: string): Promise<void> {
     `export LAUFEY_APP_ID="\${LAUFEY_APP_ID:-${APP_ID}}"`,
     `export LAUFEY_APP_NAME="\${LAUFEY_APP_NAME:-${APP_DISPLAY_NAME}}"`,
     `export LAUFEY_APP_ICON="\${LAUFEY_APP_ICON:-$DIR/${APP_ICON_FILE}}"`,
-    'export GDK_BACKEND="${GDK_BACKEND:-x11}"',
-    'export WEBKIT_DISABLE_DMABUF_RENDERER="${WEBKIT_DISABLE_DMABUF_RENDERER:-1}"',
+    'export GDK_BACKEND="${GDK_BACKEND:-wayland,x11}"',
+    "if [ -e /proc/driver/nvidia/version ]; then",
+    '  export __NV_DISABLE_EXPLICIT_SYNC="${__NV_DISABLE_EXPLICIT_SYNC:-1}"',
+    "fi",
+    "",
+    `exec "$DIR/${binaryFile}" "$@"`,
     "",
   ].join("\n");
 
-  if (!original.includes(anchor)) {
-    throw new Error(`Could not find LAUFEY_RUNTIME_PATH in ${launcherPath}`);
-  }
-
-  await Deno.writeTextFile(launcherPath, original.replace(anchor, environment));
+  await Deno.rename(launcherPath, binaryPath);
+  await Deno.writeTextFile(launcherPath, wrapper);
+  await Deno.chmod(launcherPath, 0o755);
 }
 
 async function patchDesktopMetadata(appPath: string): Promise<void> {
@@ -182,7 +182,7 @@ if (mode !== "appimage") {
 await buildLinuxDirectory(appDirPath);
 await buildCookieHook();
 await copyCookieHook(appDirPath);
-await patchLauncher(appDirPath);
+await createLauncherWrapper(appDirPath);
 await patchDesktopMetadata(appDirPath);
 await ensureAppRun(appDirPath);
 await removeIfExists(appImagePath);

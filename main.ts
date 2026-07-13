@@ -238,34 +238,20 @@ function shutdownServer(): void {
   void server.shutdown();
 }
 
-// The first BrowserWindow adopts the startup window created by deno desktop.
-const splashWindow = new Deno.BrowserWindow({
-  title: windowConfig.title,
-  width: windowConfig.width,
-  height: windowConfig.height,
-});
-
+// This BrowserWindow adopts the startup window created by Deno Desktop. Keep using
+// it when the splash finishes so the operating-system window never gets replaced.
 const appWindow = new Deno.BrowserWindow({
   title: windowConfig.title,
   width: windowConfig.width,
   height: windowConfig.height,
 });
 
-appWindow.hide();
-
-splashWindow.addEventListener("close", () => {
-  shutdownServer();
-});
-
 appWindow.addEventListener("close", () => {
   shutdownServer();
 });
 
-// The visible startup window keeps the splash animation running while YouTube Music loads offscreen.
+// Let the startup animation become visible, then navigate that same window to YouTube Music.
 setTimeout(() => {
   appWindow.navigate(YOUTUBE_MUSIC_URL);
-  void waitForClientReady(appWindow).then(() => {
-    appWindow.show();
-    splashWindow.close();
-  });
+  void waitForClientReady(appWindow);
 }, 750);
