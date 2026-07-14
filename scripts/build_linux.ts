@@ -1,6 +1,16 @@
-const APP_ID = "net.thedoctorttv.ytmusicdesktop";
-const APP_NAME = "youtube-music-desktop";
-const APP_DISPLAY_NAME = "YouTube Music Desktop";
+const variant = Deno.args[1] ?? "custom";
+if (variant !== "custom" && variant !== "native") {
+  throw new Error(`Unknown app variant: ${variant}`);
+}
+
+const nativeUi = variant === "native";
+const APP_ID = nativeUi
+  ? "net.thedoctorttv.ytmusicdesktop.native"
+  : "net.thedoctorttv.ytmusicdesktop";
+const APP_NAME = nativeUi ? "youtube-music-desktop-native" : "youtube-music-desktop";
+const APP_DISPLAY_NAME = nativeUi ? "YouTube Music Desktop Native" : "YouTube Music Desktop";
+const ENTRYPOINT = nativeUi ? "main_native.ts" : "main.ts";
+const DENO_CONFIG = nativeUi ? "./deno.native.json" : "./deno.json";
 const APP_ICON_FILE = `${APP_ID}.png`;
 const APPIMAGE_TOOL_URL =
   "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage";
@@ -59,12 +69,17 @@ async function buildLinuxDirectory(outputPath: string): Promise<void> {
 
   await run(Deno.execPath(), [
     "desktop",
+    "--config",
+    DENO_CONFIG,
+    "--exclude-unused-npm",
+    "--exclude",
+    "node_modules",
     "--icon",
     "./icons/youtubemusic.png",
     `--allow-net=${youtubeMusicHosts}`,
     "--output",
     outputPath,
-    "main.ts",
+    ENTRYPOINT,
   ]);
 }
 
@@ -100,7 +115,7 @@ async function createLauncherWrapper(appPath: string): Promise<void> {
     `export LAUFEY_RUNTIME_PATH="$DIR/${APP_NAME}.so"`,
     "",
     "# YouTube Music Desktop WebKitGTK runtime environment",
-    'export YTMUSIC_PROFILE_DIR="${YTMUSIC_PROFILE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/net.thedoctorttv.ytmusicdesktop}"',
+    `export YTMUSIC_PROFILE_DIR="\${YTMUSIC_PROFILE_DIR:-\${XDG_STATE_HOME:-$HOME/.local/state}/${APP_ID}}"`,
     'mkdir -p "$YTMUSIC_PROFILE_DIR/data" "$YTMUSIC_PROFILE_DIR/cache" "$YTMUSIC_PROFILE_DIR/config"',
     'export XDG_DATA_HOME="$YTMUSIC_PROFILE_DIR/data"',
     'export XDG_CACHE_HOME="$YTMUSIC_PROFILE_DIR/cache"',
@@ -127,7 +142,19 @@ async function patchDesktopMetadata(appPath: string): Promise<void> {
   const desktopPath = `${appPath}/${APP_ID}.desktop`;
   const iconOutputPath = `${appPath}/${APP_ICON_FILE}`;
   const legacyIconOutputPath = `${appPath}/AppIcon.png`;
-  const original = await Deno.readTextFile(desktopPath);
+  const desktopEntries = [];
+  for await (const entry of Deno.readDir(appPath)) {
+    if (entry.isFile && entry.name.endsWith(".desktop")) desktopEntries.push(entry.name);
+  }
+  const sourceDesktopPath = desktopEntries.includes(`${APP_ID}.desktop`)
+    ? desktopPath
+    : desktopEntries.length === 1
+    ? `${appPath}/${desktopEntries[0]}`
+    : "";
+  if (!sourceDesktopPath) {
+    throw new Error(`Expected one desktop entry in ${appPath}`);
+  }
+  const original = await Deno.readTextFile(sourceDesktopPath);
   const patched = original
     .replace(/^Name=.*$/m, `Name=${APP_DISPLAY_NAME}`)
     .replace(/^Exec=.*$/m, `Exec=${APP_NAME}`)
@@ -135,6 +162,7 @@ async function patchDesktopMetadata(appPath: string): Promise<void> {
     .replace(/^Categories=.*$/m, "Categories=AudioVideo;Audio;Music;Player;");
 
   await Deno.writeTextFile(desktopPath, patched);
+  if (sourceDesktopPath !== desktopPath) await Deno.remove(sourceDesktopPath);
   await Deno.copyFile(iconPath, iconOutputPath);
   await Deno.copyFile(iconPath, legacyIconOutputPath);
 }

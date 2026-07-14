@@ -1,5 +1,13 @@
-const APP_NAME = "youtube-music-desktop";
-const APP_DISPLAY_NAME = "YouTube Music Desktop";
+const variant = Deno.args[0] ?? "custom";
+if (variant !== "custom" && variant !== "native") {
+  throw new Error(`Unknown app variant: ${variant}`);
+}
+
+const nativeUi = variant === "native";
+const APP_NAME = nativeUi ? "youtube-music-desktop-native" : "youtube-music-desktop";
+const APP_DISPLAY_NAME = nativeUi ? "YouTube Music Desktop Native" : "YouTube Music Desktop";
+const ENTRYPOINT = nativeUi ? "main_native.ts" : "main.ts";
+const DENO_CONFIG = nativeUi ? "./deno.native.json" : "./deno.json";
 
 const rootUrl = new URL("../", import.meta.url);
 const rootPath = rootUrl.pathname;
@@ -93,6 +101,11 @@ async function buildDenoDesktopBundle(): Promise<void> {
 
   await run("deno", [
     "desktop",
+    "--config",
+    DENO_CONFIG,
+    "--exclude-unused-npm",
+    "--exclude",
+    "node_modules",
     "--icon",
     iconPath,
     `--allow-net=${allowedHosts}`,
@@ -100,7 +113,7 @@ async function buildDenoDesktopBundle(): Promise<void> {
     windowsTarget,
     "--output",
     finalExePath,
-    "main.ts",
+    ENTRYPOINT,
   ]);
 }
 

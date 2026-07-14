@@ -1,0 +1,30 @@
+{
+  "name": "yt-music-desktop-native",
+  "version": "0.1.0",
+  "exports": "./main_native.ts",
+  "fmt": {
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "semiColons": true,
+    "singleQuote": false
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "desktop": {
+    "app": {
+      "name": "YouTube Music Desktop Native",
+      "identifier": "net.thedoctorttv.ytmusicdesktop.native",
+      "icons": {
+        "linux": "./icons/youtubemusic.png"
+      }
+    },
+    "backend": "webview",
+    "output": {
+      "linux": "./dist/appimage/youtube-music-desktop-native.AppImage",
+      "windows": "./dist/windows/youtube-music-desktop-native.exe"
+    }
+  }
+}
