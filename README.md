@@ -1,13 +1,25 @@
 # yt-music-desktop
 
-An unofficial YouTube Music desktop app built with Deno Desktop and WebKit. It keeps the official
-`music.youtube.com` client responsible for authentication, catalog data, account state, and playback
-while presenting a separate, fully custom desktop interface. The visible local WebKit window talks
-to a hidden official-client WebKit window through a loopback-only Deno bridge.
+An unofficial YouTube Music desktop app built with Deno Desktop and WebKit. The app displays the
+official `music.youtube.com` interface directly, so YouTube Music remains responsible for the UI,
+authentication, catalog data, account state, and playback.
 
-The repository also provides a native-UI edition that displays the official `music.youtube.com`
-interface directly. It uses a separate application ID and profile, so the custom and native editions
-can be installed side by side.
+## Linux Beta Downloads
+
+Each Linux beta release is published in two editions:
+
+| Edition           | Release file                         | Choose this when                                                                      |
+| ----------------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
+| Wayland (regular) | `youtube-music-desktop.AppImage`     | You use a Wayland session. This is the default and recommended edition.               |
+| X11 compatibility | `youtube-music-desktop-x11.AppImage` | You use an X11 session, or want to run the app through XWayland in a Wayland session. |
+
+Start with the regular Wayland release. Use the X11 compatibility release if the regular edition has
+compositor or graphics-driver problems on your system. The compatibility edition forces the X11
+backend; on a Wayland desktop, it therefore runs through XWayland.
+
+Both editions use the same application identity and profile, so login state and preferences are
+shared. Fully close one edition before opening the other. The most recently launched edition becomes
+the target of the desktop launcher.
 
 ## Development
 
@@ -15,84 +27,52 @@ can be installed side by side.
 deno task dev
 ```
 
-Run the native YouTube Music interface instead with:
+The development task prefers WebKitGTK's native Wayland backend and falls back to X11 when Wayland
+is unavailable. It uses a persistent development profile so cookies and login state survive app
+restarts. Accelerated compositing and the DMA-BUF renderer remain enabled so WebKitGTK can keep
+rendering and presentation on the GPU. On NVIDIA, explicit sync is disabled to avoid WebKitGTK's
+Wayland protocol-error and low-frame-rate failure mode.
+
+At startup, the app displays a short local YouTube Music splash before navigating the same window to
+the official client. Video decoding is left to WebKitGTK and GStreamer, which automatically prefer
+an available hardware decoder without making the app depend on a particular GPU vendor.
+
+## Linux AppImage Builds
+
+The two Linux build tasks produce the pair of AppImages attached to each beta release.
+
+Build the regular native Wayland edition:
 
 ```sh
-deno task dev:native
+deno task build:linux
 ```
 
-The dev task prefers WebKitGTK's native Wayland backend, falls back to X11 when Wayland is
-unavailable, and uses a persistent development profile. The DMA-BUF renderer remains enabled so
-WebKitGTK can use GPU-backed rendering. NVIDIA explicit sync is disabled to avoid WebKitGTK's
-Wayland protocol-error crash while retaining GPU rendering.
+The build task creates an unpacked Deno Desktop app, adds a launcher with the Wayland/X11 and NVIDIA
+workarounds above, and then packages it with `appimagetool`. On the first run it downloads
+`appimagetool` into `.tools/`.
 
-## Frontend Preview
-
-The custom interface includes a local mock-data preview for working on layout, responsive behavior,
-and light/dark themes without requiring a signed-in YouTube Music session.
-
-```sh
-deno task preview
-```
-
-Open `http://127.0.0.1:4176/` after starting the preview server. The production interface uses the
-same components and styles, with recommendation shelves, search, navigation, the queue, and player
-state relayed from the official YouTube Music client over local `/api/state` and `/api/command`
-routes. Those routes are bound to Deno Desktop's loopback server and are not exposed to the network.
-
-## AppImage Build
-
-```sh
-deno task build:appimage
-```
-
-The AppImage task builds an unpacked Deno Desktop app first, adds a launcher that prefers native
-Wayland with an X11 fallback and keeps WebKitGTK's DMA-BUF renderer enabled, then packages that app
-directory with `appimagetool`. On NVIDIA systems, the launcher applies the explicit-sync workaround
-required by WebKitGTK; other GPUs are unaffected. On the first run it downloads `appimagetool` into
-`.tools/`.
-
-The AppImage is written to:
+The regular release file is written to:
 
 ```text
 dist/appimage/youtube-music-desktop.AppImage
 ```
 
-Build the native-UI AppImage with:
+Build the X11 compatibility edition:
 
 ```sh
-deno task build:native
+deno task build:linux-x11
 ```
 
-Its artifact is written to `dist/appimage/youtube-music-desktop-native.AppImage`.
-
-`deno task build` points at the AppImage build. The temporary AppDir used for packaging stays in
-`dist/appimage/youtube-music-desktop/`; the `.AppImage` file is the one to distribute.
-
-The launcher stores WebKitGTK data under `~/.local/state/net.thedoctorttv.ytmusicdesktop/`, so
-YouTube Music cookies and login state persist between app launches.
-
-## Windows Build
-
-```sh
-deno task build:windows
-```
-
-The Windows task first builds Deno Desktop's normal Windows folder bundle, then packages that bundle
-into one launcher `.exe`. The single-file Windows build is written to:
+The compatibility release file is written to:
 
 ```text
-dist/windows/youtube-music-desktop.exe
+dist/appimage/youtube-music-desktop-x11.AppImage
 ```
 
-The intermediate Deno Desktop folder remains in `dist/windows/youtube-music-desktop/` for
-inspection, but the top-level `.exe` is the file to distribute.
+On NVIDIA, the X11 launcher uses WebKitGTK's shared-memory presentation fallback to avoid blank
+windows caused by failed GBM buffer allocation under XWayland.
 
-The native-UI Windows build uses `deno task build:native:windows` and writes
-`dist/windows/youtube-music-desktop-native.exe`.
-
-## Icon Credit
-
-Interface icons are from [Tabler Icons](https://github.com/tabler/tabler-icons), copyright Paweł
-Kuna and contributors, and are used under the
-[MIT License](https://github.com/tabler/tabler-icons/blob/main/LICENSE).
+The temporary AppDirs remain in `dist/appimage/youtube-music-desktop/` and
+`dist/appimage/youtube-music-desktop-x11/`. Both launchers store WebKitGTK data under
+`~/.local/state/net.thedoctorttv.ytmusicdesktop/`, so YouTube Music cookies and login state persist
+between app launches.

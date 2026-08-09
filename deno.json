@@ -1,19 +1,13 @@
 {
   "name": "yt-music-desktop",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "exports": "./main.ts",
   "tasks": {
     "icon:generate": "rsvg-convert -w 512 -h 512 youtubemusic.svg -o icons/youtubemusic.png",
-    "dev": "env LAUFEY_APP_ID=net.thedoctorttv.ytmusicdesktop LAUFEY_APP_NAME='YouTube Music Desktop' LAUFEY_APP_ICON=$PWD/icons/youtubemusic.png XDG_DATA_HOME=$HOME/.local/share/net.thedoctorttv.ytmusicdesktop/data XDG_CACHE_HOME=$HOME/.cache/net.thedoctorttv.ytmusicdesktop XDG_CONFIG_HOME=$HOME/.config/net.thedoctorttv.ytmusicdesktop GDK_BACKEND=wayland,x11 __NV_DISABLE_EXPLICIT_SYNC=1 deno desktop --exclude-unused-npm --exclude node_modules --icon ./icons/youtubemusic.png --allow-net=127.0.0.1,music.youtube.com,www.youtube.com,accounts.google.com,google.com,gstatic.com,googleusercontent.com,ytimg.com --hmr main.ts",
-    "dev:native": "env LAUFEY_APP_ID=net.thedoctorttv.ytmusicdesktop.native LAUFEY_APP_NAME='YouTube Music Desktop Native' LAUFEY_APP_ICON=$PWD/icons/youtubemusic.png XDG_DATA_HOME=$HOME/.local/share/net.thedoctorttv.ytmusicdesktop.native/data XDG_CACHE_HOME=$HOME/.cache/net.thedoctorttv.ytmusicdesktop.native XDG_CONFIG_HOME=$HOME/.config/net.thedoctorttv.ytmusicdesktop.native GDK_BACKEND=wayland,x11 __NV_DISABLE_EXPLICIT_SYNC=1 deno desktop --config ./deno.native.json --exclude-unused-npm --exclude node_modules --icon ./icons/youtubemusic.png --allow-net=127.0.0.1,music.youtube.com,www.youtube.com,accounts.google.com,google.com,gstatic.com,googleusercontent.com,ytimg.com --hmr main_native.ts",
-    "preview": "deno run --allow-net=127.0.0.1 scripts/preview.ts",
-    "build": "deno task build:appimage",
-    "build:appimage": "deno run --allow-read=. --allow-write=dist,.tools --allow-net=github.com,objects.githubusercontent.com,github-releases.githubusercontent.com,release-assets.githubusercontent.com --allow-run scripts/build_linux.ts appimage",
-    "build:native": "deno task build:native:appimage",
-    "build:native:appimage": "deno run --allow-read=. --allow-write=dist,.tools --allow-net=github.com,objects.githubusercontent.com,github-releases.githubusercontent.com,release-assets.githubusercontent.com --allow-run scripts/build_linux.ts appimage native",
-    "build:windows": "deno run --allow-read=. --allow-write=dist --allow-run scripts/package_windows_single_exe.ts",
-    "build:native:windows": "deno run --allow-read=. --allow-write=dist --allow-run scripts/package_windows_single_exe.ts native",
-    "check": "deno check --desktop main.ts main_native.ts && deno check scripts/preview.ts"
+    "dev": "env LAUFEY_APP_ID=net.thedoctorttv.ytmusicdesktop LAUFEY_APP_NAME='YouTube Music Desktop' LAUFEY_APP_ICON=$PWD/icons/youtubemusic.png XDG_DATA_HOME=$HOME/.local/share/net.thedoctorttv.ytmusicdesktop/data XDG_CACHE_HOME=$HOME/.cache/net.thedoctorttv.ytmusicdesktop XDG_CONFIG_HOME=$HOME/.config/net.thedoctorttv.ytmusicdesktop GDK_BACKEND=wayland,x11 WEBKIT_FORCE_COMPOSITING_MODE=1 __NV_DISABLE_EXPLICIT_SYNC=1 deno desktop --exclude-unused-npm --exclude node_modules --icon ./icons/youtubemusic.png --allow-net=127.0.0.1,music.youtube.com,www.youtube.com,accounts.google.com,google.com,gstatic.com,googleusercontent.com,ytimg.com --hmr main.ts",
+    "build:linux": "deno run --allow-read=. --allow-write=dist,.tools --allow-net=github.com,objects.githubusercontent.com,github-releases.githubusercontent.com,release-assets.githubusercontent.com --allow-run scripts/build_linux.ts wayland",
+    "build:linux-x11": "deno run --allow-read=. --allow-write=dist,.tools --allow-net=github.com,objects.githubusercontent.com,github-releases.githubusercontent.com,release-assets.githubusercontent.com --allow-run scripts/build_linux.ts x11",
+    "check": "deno check --desktop main.ts"
   },
   "fmt": {
     "indentWidth": 2,
@@ -36,8 +30,7 @@
     },
     "backend": "webview",
     "output": {
-      "linux": "./dist/appimage/youtube-music-desktop.AppImage",
-      "windows": "./dist/windows/youtube-music-desktop.exe"
+      "linux": "./dist/appimage/youtube-music-desktop.AppImage"
     }
   }
 }
