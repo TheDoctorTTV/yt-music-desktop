@@ -1,0 +1,28 @@
+# Release-source recipe. Generate PKGBUILD and .SRCINFO with scripts/prepare_aur.sh.
+pkgname=yt-music-desktop
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc='YouTube Music desktop player with Qt WebEngine and native MPRIS artwork'
+arch=('x86_64')
+url='https://github.com/TheDoctorTTV/yt-music-desktop'
+# Set license metadata when the upstream project declares its license.
+depends=('glibc' 'gcc-libs' 'qt6-base>=6.8' 'qt6-webengine>=6.8' 'qt6-wayland>=6.8')
+makedepends=('cmake')
+# The local package uses this name, which is also occupied on AUR.
+conflicts=('youtube-music-desktop')
+options=('!debug')
+source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('@SHA256@')
+
+build() {
+  cmake -S "$srcdir/yt-music-desktop-$pkgver" -B "$srcdir/build" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DBUILD_TESTING=OFF
+  cmake --build "$srcdir/build"
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+}
