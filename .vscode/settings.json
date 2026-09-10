@@ -1,7 +1,4 @@
 {
-  "deno.enable": true,
-  "deno.lint": true,
-  "deno.config": "./deno.json",
-  "typescript.validate.enable": false,
-  "javascript.validate.enable": false
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

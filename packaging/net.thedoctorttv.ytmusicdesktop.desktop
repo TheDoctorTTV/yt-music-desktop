@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=YouTube Music Desktop
+Exec=youtube-music-desktop
+Icon=net.thedoctorttv.ytmusicdesktop
+StartupWMClass=net.thedoctorttv.ytmusicdesktop
+Categories=AudioVideo;Audio;Music;Player;
