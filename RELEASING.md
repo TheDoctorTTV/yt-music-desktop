@@ -31,7 +31,7 @@ Create a GitHub release for `v1.0.0`, use the 1.0.0 entry from `CHANGELOG.md` as
 its release notes, and attach:
 
 - `dist/qt/youtube-music-desktop.AppImage`
-- `dist/arch/youtube-music-desktop-1.0.0-1-x86_64.pkg.tar.zst`
+- `dist/arch/yt-music-desktop-1.0.0-1-x86_64.pkg.tar.zst`
 
 The tag must include the new Qt source and CMake files. Merely committing them
 locally does not make them downloadable. Do not move a published tag to a
@@ -61,10 +61,10 @@ build environment is preferable for checking release dependencies.
 The AUR package name is **`yt-music-desktop`**, matching this repository. On
 2026-09-10, the AUR RPC reported this name available; `youtube-music-desktop`
 is already maintained for an unrelated qtws application. The AUR recipe
-conflicts with the locally built `youtube-music-desktop` package to prevent
-file collisions. When switching, pacman removes the old package and installs
-this one; the executable remains `youtube-music-desktop` and the profile is
-unchanged.
+conflicts with and replaces this project's earlier local packages named
+`youtube-music-desktop`. When switching, pacman removes the old package and
+installs this one; the executable remains `youtube-music-desktop` and the
+profile is unchanged.
 
 1. Create an account at <https://aur.archlinux.org/> and add your SSH **public**
    key in the account settings. Keep the private key private.

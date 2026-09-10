@@ -17,7 +17,7 @@ Use the same entry point for either format:
 
 Outputs:
 
-- Arch: `dist/arch/youtube-music-desktop-*.pkg.tar.zst`
+- Arch: `dist/arch/yt-music-desktop-*.pkg.tar.zst`
 - AppImage: `dist/qt/youtube-music-desktop.AppImage`
 
 Neither build installs or launches the app or runs tests. AppImage packaging
@@ -32,7 +32,7 @@ From this project directory, run one command:
 ./build.sh
 ```
 
-This builds a native `youtube-music-desktop-*.pkg.tar.zst` package in `dist/arch/`
+This builds a native `yt-music-desktop-*.pkg.tar.zst` package in `dist/arch/`
 from the current source, including uncommitted edits. It uses system Qt packages
 instead of bundling Chromium/Qt. The package contains the executable, application
 menu entry, and icon. The build does not install anything, run tests, or launch
@@ -41,8 +41,12 @@ the app.
 Install the result with:
 
 ```sh
-sudo pacman -U dist/arch/youtube-music-desktop-1.0.0-1-x86_64.pkg.tar.zst
+sudo pacman -U dist/arch/yt-music-desktop-1.0.0-1-x86_64.pkg.tar.zst
 ```
+
+The package is named `yt-music-desktop` to avoid colliding with an unrelated AUR
+package named `youtube-music-desktop`. It replaces this project's earlier local
+packages with that old name.
 
 Then launch **YouTube Music Desktop** from your application menu, or run
 `youtube-music-desktop`. It shares the same profile as the Qt AppImage, so close

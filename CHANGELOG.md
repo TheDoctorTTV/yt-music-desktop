@@ -47,7 +47,9 @@ First stable Qt release. This is the cumulative release changelog from the
 
 ### Linux builds and fixes
 
-- Add native Arch/CachyOS packaging with system Qt dependencies, an application
+- Add native Arch/CachyOS packaging as `yt-music-desktop`, avoiding a collision
+  with the unrelated `youtube-music-desktop` package on AUR. The package uses
+  system Qt dependencies and includes an application
   launcher and icon. This avoids embedding Chromium and Qt in the native package.
 - Replace Deno build tasks with CMake and a common build entry point:
   `./build.sh arch`, `./build.sh appimage`, or `./build.sh all`.

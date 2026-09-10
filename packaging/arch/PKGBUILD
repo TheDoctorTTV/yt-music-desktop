@@ -1,5 +1,5 @@
 # Local source snapshot is produced by ./build.sh; no Git commit is required.
-pkgname=youtube-music-desktop
+pkgname=yt-music-desktop
 pkgver=1.0.0
 pkgrel=1
 pkgdesc='YouTube Music desktop player with Qt WebEngine and native MPRIS artwork'
@@ -8,6 +8,8 @@ url='https://github.com/TheDoctorTTV/yt-music-desktop'
 # This repository has not declared a license; do not invent a license grant.
 depends=('glibc' 'gcc-libs' 'qt6-base>=6.8' 'qt6-webengine>=6.8' 'qt6-wayland>=6.8')
 makedepends=('cmake')
+conflicts=('youtube-music-desktop')
+replaces=('youtube-music-desktop=0.4.0-1' 'youtube-music-desktop=1.0.0-1')
 options=('!debug')
 source=('youtube-music-desktop-source.tar.gz')
 # build.sh replaces this with the checksum of the freshly created local snapshot.

@@ -10,6 +10,7 @@ depends=('glibc' 'gcc-libs' 'qt6-base>=6.8' 'qt6-webengine>=6.8' 'qt6-wayland>=6
 makedepends=('cmake')
 # The local package uses this name, which is also occupied on AUR.
 conflicts=('youtube-music-desktop')
+replaces=('youtube-music-desktop=0.4.0-1' 'youtube-music-desktop=1.0.0-1')
 options=('!debug')
 source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz")
 sha256sums=('@SHA256@')
