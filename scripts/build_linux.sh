@@ -47,11 +47,34 @@ else
   export EXTRA_PLATFORM_PLUGINS='libqwayland-egl.so;libqwayland-generic.so'
 fi
 # Build to a separate file: never overwrite a currently mounted AppImage in place.
-export OUTPUT="$project_root/dist/qt/youtube-music-desktop.next.AppImage"
+appimage_basename="${APPIMAGE_BASENAME:-youtube-music-desktop.local}"
+export OUTPUT="$project_root/dist/qt/$appimage_basename.next.AppImage"
 "$tool_dir/linuxdeploy-x86_64.AppImage" --appdir "$appdir"
 # A music player does not use serial GPS receivers. Exclude the optional NMEA
 # plugin, which can be installed without its optional QtSerialPort dependency.
 "$tool_dir/linuxdeploy-plugin-qt-x86_64.AppImage" --appdir "$appdir" --exclude-library=libqtposition_nmea.so
+# NSS loads crypto modules by name at runtime. Bundle the modules matching the
+# NSS libraries linuxdeploy copied, otherwise a newer host module can be loaded.
+nss_modules=
+for candidate in /usr/lib/x86_64-linux-gnu/nss /usr/lib64/nss /usr/lib/nss /usr/lib64 /usr/lib; do
+  if [[ -f "$candidate/libsoftokn3.so" ]]; then
+    nss_modules="$candidate"
+    break
+  fi
+done
+if [[ -z "$nss_modules" ]]; then
+  printf '%s\n' 'NSS softoken module was not found.' >&2
+  exit 1
+fi
+for module in libsoftokn3 libfreebl3 libfreeblpriv3 libnssdbm3 libnssckbi; do
+  for extension in so chk; do
+    if [[ -f "$nss_modules/$module.$extension" ]]; then
+      cp -a "$nss_modules/$module.$extension" "$appdir/usr/lib/"
+    fi
+  done
+done
+"$tool_dir/linuxdeploy-x86_64.AppImage" --appdir "$appdir" \
+  --deploy-deps-only "$appdir/usr/lib/libsoftokn3.so"
 # linuxdeploy-plugin-qt omits this dynamically loaded Qt Wayland plugin family.
 # The platform plugin alone can create a taskbar entry but cannot draw a window.
 wayland_graphics="$appdir/usr/plugins/wayland-graphics-integration-client"
@@ -59,6 +82,9 @@ mkdir -p "$wayland_graphics"
 cp -a "$qt_plugins/wayland-graphics-integration-client/." "$wayland_graphics/"
 "$tool_dir/linuxdeploy-x86_64.AppImage" --appdir "$appdir" \
   --deploy-deps-only "$wayland_graphics" --output appimage
-mv -f "$OUTPUT" "$project_root/dist/qt/youtube-music-desktop.AppImage"
-OUTPUT="$project_root/dist/qt/youtube-music-desktop.AppImage"
+if [[ "${CHECK_APPIMAGE_BASELINE:-0}" == 1 ]]; then
+  "$project_root/scripts/check_appimage_baseline.sh"
+fi
+mv -f "$OUTPUT" "$project_root/dist/qt/$appimage_basename.AppImage"
+OUTPUT="$project_root/dist/qt/$appimage_basename.AppImage"
 printf 'AppImage: %s\n' "$OUTPUT"

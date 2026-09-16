@@ -19,6 +19,7 @@ Outputs:
 
 - Arch: `dist/arch/yt-music-desktop-*.pkg.tar.zst`
 - AppImage: `dist/qt/youtube-music-desktop.AppImage`
+- Local development AppImage: `dist/qt/youtube-music-desktop.local.AppImage`
 
 Neither build installs or launches the app or runs tests. AppImage packaging
 may download its build tools/runtime; Arch packaging uses installed system
@@ -48,8 +49,9 @@ For an AppImage intended to run on older distributions, build in the Ubuntu
 ./build.sh appimage
 ```
 
-This uses glibc 2.35 as the build baseline and bundles Qt 6.8.3. It writes the
-AppImage to `dist/qt/youtube-music-desktop.AppImage`. The first run downloads
+This uses glibc 2.35 as the build baseline and bundles Qt 6.8.3. It checks the
+bundled binaries' glibc requirements before accepting the AppImage in
+`dist/qt/youtube-music-desktop.AppImage`. The first run downloads
 the container image and Qt, so it needs network access and several gigabytes
 of free space. `./build.sh appimage-local` uses the current system's libraries
 and should be treated as a local build. Test the release

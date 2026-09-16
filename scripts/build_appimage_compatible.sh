@@ -36,4 +36,6 @@ image=yt-music-desktop-appimage:ubuntu-22.04
   --volume "$mount" \
   -e HOME=/tmp -e BUILD_DIR=.build-appimage-ubuntu2204 \
   -e LINUXDEPLOY_DIR=/work/.tools/ubuntu2204 \
-  -w /work "$image" ./scripts/build_linux.sh
+  -w /work -e APPIMAGE_BASENAME=youtube-music-desktop \
+  -e CHECK_APPIMAGE_BASELINE=1 \
+  "$image" ./scripts/build_linux.sh

@@ -17,7 +17,7 @@ fi
 case "${1:-arch}" in
   arch) exec "$project_root/scripts/build_arch.sh" ;;
   appimage) exec "$project_root/scripts/build_appimage_compatible.sh" ;;
-  appimage-local) exec "$project_root/scripts/build_linux.sh" ;;
+  appimage-local) APPIMAGE_BASENAME=youtube-music-desktop.local exec "$project_root/scripts/build_linux.sh" ;;
   all)
     "$project_root/scripts/build_arch.sh"
     "$project_root/scripts/build_appimage_compatible.sh"
