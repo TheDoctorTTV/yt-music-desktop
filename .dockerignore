@@ -1,0 +1,6 @@
+.git
+.tools
+.build-appimage-ubuntu2204
+build
+dist
+aqtinstall.log

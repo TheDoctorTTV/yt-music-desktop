@@ -13,9 +13,10 @@ source for a fixed release tag and build it against their system Qt packages.
   label it MIT/GPL/etc. without choosing those terms. If a license file must be
   installed, include it in the local source snapshot and CMake install rules.
 - Confirm `CMakeLists.txt` and `packaging/arch/PKGBUILD` both say `1.0.0`.
-- Build the two release artifacts with `./build.sh all` when ready. The command
-  does not install or run the application. Older artifacts in `dist/` retain
-  their old version until rebuilt.
+- Build the two release artifacts with `./build.sh all` on an Arch-based system
+  with Docker or Podman available. The Arch package uses system packages; the
+  AppImage uses the Ubuntu 22.04 container. The command does not install or run
+  the application. Older artifacts in `dist/` retain their old version until rebuilt.
 
 ## Publish the source release
 
