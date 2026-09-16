@@ -3,26 +3,59 @@
 An unofficial YouTube Music app using **Qt 6 WebEngine (Chromium)** and a native
 Linux MPRIS service. The official website provides browsing, login and playback.
 Qt WebEngine embeds Chromium directly; CEF is not an additional dependency.
-Disclaimer, this project was made with the assistance of AI.
 
 ## Build packages
 
 Use the same entry point for either format:
 
 ```sh
-./build.sh all       # Both Arch package and AppImage
+./build.sh all       # Arch package and compatible AppImage
 ./build.sh arch      # Arch package only (also the default for ./build.sh)
-./build.sh appimage  # AppImage only
+./build.sh appimage  # Compatible AppImage in Ubuntu 22.04 container
+./build.sh appimage-local  # AppImage against this system (development only)
 ```
 
 Outputs:
 
 - Arch: `dist/arch/yt-music-desktop-*.pkg.tar.zst`
 - AppImage: `dist/qt/youtube-music-desktop.AppImage`
+- Local development AppImage: `dist/qt/youtube-music-desktop.local.AppImage`
 
 Neither build installs or launches the app or runs tests. AppImage packaging
 may download its build tools/runtime; Arch packaging uses installed system
 libraries. `BUILD_JOBS=8 ./build.sh all` changes the build parallelism.
+
+### Install build requirements
+
+On Linux with apt, nala, dnf, or pacman, run:
+
+```sh
+./scripts/install_build_requirements.sh
+```
+
+The installer asks for `sudo` for system packages and prints the build command
+when it finishes. It uses the distribution's Qt if it is at least 6.8. On older
+distributions such as Ubuntu 24.04, it downloads Qt 6.8.3 into `.tools/qt/`
+on x86_64; the AppImage build uses that copy automatically. Qt WebEngine is a
+large download. Use `./build.sh arch` on pacman systems or
+`./build.sh appimage-local` for a local development build on apt/nala and dnf.
+
+### Compatible AppImage release build
+
+For an AppImage intended to run on older distributions, build in the Ubuntu
+22.04 x86_64 container with Podman or Docker:
+
+```sh
+./build.sh appimage
+```
+
+This uses glibc 2.35 as the build baseline and bundles Qt 6.8.3. It checks the
+bundled binaries' glibc requirements before accepting the AppImage in
+`dist/qt/youtube-music-desktop.AppImage`. The first run downloads
+the container image and Qt, so it needs network access and several gigabytes
+of free space. `./build.sh appimage-local` uses the current system's libraries
+and should be treated as a local build. Test the release
+AppImage on Ubuntu 22.04 and newer systems before publishing it.
 
 ### Arch/CachyOS package
 
@@ -154,7 +187,7 @@ It does not sign in or claim to verify production YouTube playback.
 ```sh
 cmake --install build --prefix "$HOME/.local"
 # Build an AppImage (downloads linuxdeploy and its Qt plugin to .tools/):
-./build.sh appimage
+./build.sh appimage-local
 ```
 
 The new AppImage is written to `dist/qt/youtube-music-desktop.AppImage`. The Qt
@@ -164,8 +197,5 @@ Arch does not make the result compatible with older glibc systems. Test a packag
 on a clean target system before publishing it. Old files in `dist/appimage/` are
 Deno builds and are not updated by this build.
 
-## Release and AUR submission
-
-See [CHANGELOG.md](CHANGELOG.md) for changes since v0.2.0 and
-[RELEASING.md](RELEASING.md) for tagging 1.0.0, attaching release builds, and
-submitting the source package to AUR.
+# Disclaimer
+This project was made with the assistance of AI.
