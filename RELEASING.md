@@ -1,4 +1,4 @@
-# Releasing 1.0.0 and publishing to AUR
+# Releasing 1.1.0 and publishing to AUR
 
 AUR stores build recipes, **not** the `.pkg.tar.zst` binary. Users download the
 source for a fixed release tag and build it against their system Qt packages.
@@ -12,7 +12,7 @@ source for a fixed release tag and build it against their system Qt packages.
   add its LICENSE file, and update both Arch recipes before publication. Do not
   label it MIT/GPL/etc. without choosing those terms. If a license file must be
   installed, include it in the local source snapshot and CMake install rules.
-- Confirm `CMakeLists.txt` and `packaging/arch/PKGBUILD` both say `1.0.0`.
+- Confirm `CMakeLists.txt` and `packaging/arch/PKGBUILD` both say `1.1.0`.
 - Build the two release artifacts with `./build.sh all` on an Arch-based system
   with Docker or Podman available. The Arch package uses system packages; the
   AppImage uses the Ubuntu 22.04 container. The command does not install or run
@@ -24,15 +24,15 @@ After committing the release changes on your intended release branch:
 
 ```sh
 git push
-git tag -a v1.0.0 -m "Release 1.0.0"
-git push origin v1.0.0
+git tag -a v1.1.0 -m "Release 1.1.0"
+git push origin v1.1.0
 ```
 
-Create a GitHub release for `v1.0.0`, use the 1.0.0 entry from `CHANGELOG.md` as
+Create a GitHub release for `v1.1.0`, use the 1.1.0 entry from `CHANGELOG.md` as
 its release notes, and attach:
 
 - `dist/qt/youtube-music-desktop.AppImage`
-- `dist/arch/yt-music-desktop-1.0.0-1-x86_64.pkg.tar.zst`
+- `dist/arch/yt-music-desktop-1.1.0-1-x86_64.pkg.tar.zst`
 
 The tag must include the new Qt source and CMake files. Merely committing them
 locally does not make them downloadable. Do not move a published tag to a
@@ -90,7 +90,7 @@ cp /home/thedoctorttv/Documents/GitHub/yt-music-desktop/dist/aur/PKGBUILD \
    "$HOME/yt-music-desktop-aur/"
 cd "$HOME/yt-music-desktop-aur"
 git add PKGBUILD .SRCINFO
-git commit -m "Initial release: yt-music-desktop 1.0.0"
+git commit -m "Release: yt-music-desktop 1.1.0"
 git push -u origin master
 ```
 

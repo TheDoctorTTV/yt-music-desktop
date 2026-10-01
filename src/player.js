@@ -7,6 +7,9 @@
   const thumbs = [...(meta?.artwork || [])].sort((a,b) =>
     (parseInt(b.sizes) || 0) - (parseInt(a.sizes) || 0)).map(x => x.src);
   const cover = document.querySelector('ytmusic-player-bar img');
+  const lyricsTab = document.querySelector(
+    'ytmusic-tab-renderer[page-type="MUSIC_PAGE_TYPE_TRACK_LYRICS"], ' +
+    '#tab-renderer[page-type="MUSIC_PAGE_TYPE_TRACK_LYRICS"]');
   if (cover?.src) thumbs.push(cover.src);
   const candidates = [];
   const videoThumbs = [];
@@ -31,11 +34,18 @@
   return {
     id, title: meta?.title || data.title || '',
     artist: meta?.artist || data.author || '', album: meta?.album || '',
+    // MediaSession can still describe the previous song after video_id changes.
+    // Keep lookup metadata paired with the player data that supplied the ID.
+    lyricsTitle: data.video_id === id ? data.title || '' : '',
+    lyricsArtist: data.video_id === id ? data.author || '' : '',
     artwork: [...new Set(candidates)],
     status: !video || video.ended ? 'Stopped' : video.paused ? 'Paused' : 'Playing',
     position: Number.isFinite(video?.currentTime) ? video.currentTime : 0,
     duration: Number.isFinite(video?.duration) ? video.duration : 0,
     volume: video?.volume ?? 1, available: !!video && !!id,
-    seeking: !!video?.seeking
+    seeking: !!video?.seeking,
+    lyricsSource: document.querySelector('#ytmd-lyrics-source')?.value || 'auto',
+    lyricsOpen: !!lyricsTab?.getClientRects?.().length ||
+      !!document.querySelector('#ytmd-standalone-panel[data-open]')
   };
 })()

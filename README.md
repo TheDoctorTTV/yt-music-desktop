@@ -1,4 +1,4 @@
-# YouTube Music Desktop 1.0.0
+# YouTube Music Desktop 1.1.0
 
 An unofficial YouTube Music app using **Qt 6 WebEngine (Chromium)** and a native
 Linux MPRIS service. The official website provides browsing, login and playback.
@@ -74,7 +74,7 @@ the app.
 Install the result with:
 
 ```sh
-sudo pacman -U dist/arch/yt-music-desktop-1.0.0-1-x86_64.pkg.tar.zst
+sudo pacman -U dist/arch/yt-music-desktop-1.1.0-1-x86_64.pkg.tar.zst
 ```
 
 The package is named `yt-music-desktop` to avoid colliding with an unrelated AUR
@@ -108,6 +108,26 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel 4
 ./build/youtube-music-desktop
 ```
+
+For a local development run with live terminal output, close the installed app
+and run `./run-local.sh`. It compiles only changed files after the first build,
+then launches the project executable with `--debug` without making an Arch
+package or AppImage. Output is also saved to `/tmp/ytmd-local.log`. Use
+`./run-local.sh --no-build` to launch the existing executable immediately.
+Other arguments, such as `--menubar`, are passed to the app.
+
+The same debug flag is available in the installed Arch package and AppImage
+when they are launched from a terminal:
+
+```sh
+youtube-music-desktop --debug
+# or: /path/to/youtube-music-desktop.AppImage --debug
+```
+
+The debug log shows page load status and lyric lookup details: track metadata,
+provider requests, HTTP outcomes, and match counts. It does not print lyric
+text. The project executable and installed package use the same saved profile,
+so only one can run at a time.
 
 The menu bar is hidden by default. To show the **App** menu, start with:
 
@@ -156,6 +176,55 @@ startup. Desktop widgets can still choose their own display size.
 
 The website bridge is in `src/player.js`. YouTube can change its page structure;
 this adapter may need maintenance. No account credentials are exposed over D-Bus.
+
+## Lyrics
+
+Open YouTube Music's **Lyrics** tab and use the **Lyrics source** menu at the top
+of the panel. The choices are **Auto** (the default), **LRCLIB**,
+**SimpMusic**, **KuGou**, **Lyrics.ovh**, **Genius**, and **YouTube Music**. Auto checks the
+external sources in that order, then shows YouTube Music's own lyrics. The
+selection is remembered in the web profile. The selected provider supplies the
+displayed words. Separately, the app checks LRCLIB, SimpMusic, and KuGou for
+timestamps, starting with the text provider when it has timed lyrics. It uses
+timestamps only when at least 60% of the lines match in order. The source and
+timing status text appears in the panel only in debug mode (`--debug`, enabled
+by default by `run-local.sh`). A mismatched or missing timing source leaves the selected
+words untimed. Clicking a matched timed line seeks to that time.
+**Sync animation** is on by default and can be turned off from the lyrics panel.
+For timed lyrics it follows the active line and sweeps across the text as the song
+plays. Enhanced LRC word timestamps are used when a provider supplies them.
+For ordinary line-timed LRC, it estimates the timing of individual words between
+line timestamps; the debug status labels that timing as estimated because it may not
+match the vocal rhythm exactly.
+Genius and Lyrics.ovh provide plain text, which can still be synchronized when
+another provider has matching timed lines. The animation toggle cannot invent
+timestamps when none are available.
+SimpMusic is looked up by YouTube video ID.
+Genius search uses the song title and accepts only a matching title; this helps
+when the YouTube uploader differs from the recording artist. Genius lyrics come
+from its public song page because its search response does not include lyric text.
+For OST uploads, the lookup strips a trailing game/OST label from the video
+title. If an uploader name does not match the recording artist, LRCLIB also
+tries a title-only search and accepts only a close duration match.
+Lookup metadata comes from the current video's player data, since desktop
+media metadata can lag behind a track change. The search also removes matching
+artist credits and common Japanese OST/BGM upload labels from the title.
+Temporary network and server failures are retried once. A manually selected
+source reports service failures separately from missing lyrics; failed lookups
+can be retried by reopening the panel or reselecting a source after 30 seconds.
+The rest of YouTube Music's player and tab layout remains the website's UI.
+When YouTube Music greys out its Lyrics tab, the desktop app makes that tab
+clickable and opens its own lyrics panel over the side pane. Other tabs keep
+their usual behavior.
+
+External lookups send track details to the chosen text service and, when needed,
+to the timestamp providers. SimpMusic receives the YouTube video ID. Auto may
+use all five external services. No account cookies
+are sent to them by the native network client. Lyrics are displayed in the app
+and cached only for the current track. Availability and matching vary by song;
+none of the sources guarantees lyrics for every track. KuGou and Genius use
+website interfaces that can change without notice. The source menu and panel adaptation
+are in `src/lyrics.js`; provider lookups are in `src/lyrics.cpp`.
 
 ## Profile and migration
 

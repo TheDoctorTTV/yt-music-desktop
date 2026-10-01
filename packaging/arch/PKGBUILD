@@ -1,6 +1,6 @@
 # Local source snapshot is produced by ./build.sh; no Git commit is required.
 pkgname=yt-music-desktop
-pkgver=1.0.0
+pkgver=1.1.0
 pkgrel=1
 pkgdesc='YouTube Music desktop player with Qt WebEngine and native MPRIS artwork'
 arch=('x86_64')

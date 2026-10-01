@@ -8,6 +8,7 @@
 #include <QDBusMessage>
 #include <QDBusObjectPath>
 #include <QDesktopServices>
+#include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QImage>
@@ -27,8 +28,11 @@
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
+#include <QWebEngineScript>
+#include <QWebEngineScriptCollection>
 #include <QWebEngineView>
 #include <cmath>
+#include "lyrics.h"
 
 static const QString appId = "net.thedoctorttv.ytmusicdesktop";
 static const QString busPath = "/org/mpris/MediaPlayer2";
@@ -343,6 +347,10 @@ int main(int argc, char **argv) {
     flags += " --disable-features=HardwareMediaKeyHandling";
   qputenv("QTWEBENGINE_CHROMIUM_FLAGS", flags.toLocal8Bit());
   QApplication app(argc, argv);
+  const bool debug = app.arguments().contains("--debug") ||
+                     qEnvironmentVariableIsSet("YTMD_LYRICS_DEBUG");
+  if (debug)
+    qInfo() << "YouTube Music Desktop debug logging enabled; Qt" << qVersion();
   app.setApplicationName(appId);
   app.setApplicationVersion(QStringLiteral(YTMUSIC_VERSION));
   app.setOrganizationName("thedoctorttv");
@@ -370,6 +378,19 @@ int main(int argc, char **argv) {
   auto view = new QWebEngineView(&window);
   auto page = new QWebEnginePage(&profile, view);
   view->setPage(page);
+  QFile lyricsFile(":/src/lyrics.js");
+  if (!lyricsFile.open(QIODevice::ReadOnly))
+    qFatal("Missing lyrics script resource");
+  QWebEngineScript lyricsScript;
+  lyricsScript.setName("YouTube Music Desktop lyrics");
+  lyricsScript.setInjectionPoint(QWebEngineScript::DocumentReady);
+  lyricsScript.setWorldId(QWebEngineScript::ApplicationWorld);
+  lyricsScript.setRunsOnSubFrames(false);
+  lyricsScript.setSourceCode(
+      QStringLiteral("window.__ytmdLyricsDebug = %1;\n")
+          .arg(debug ? "true" : "false") +
+      QString::fromUtf8(lyricsFile.readAll()));
+  page->scripts().insert(lyricsScript);
   window.setCentralWidget(view);
   page->settings()->setAttribute(
       QWebEngineSettings::PlaybackRequiresUserGesture, false);
@@ -384,7 +405,10 @@ int main(int argc, char **argv) {
                        QDesktopServices::openUrl(u);
                    });
   QObject::connect(page, &QWebEnginePage::loadFinished, &window,
-                   [&window](bool ok) {
+                   [&window, page, debug](bool ok) {
+                     if (debug)
+                       qInfo() << "Page load finished:" << page->url().host()
+                               << "success:" << ok;
                      if (ok)
                        window.statusBar()->hide();
                      else {
@@ -415,6 +439,7 @@ int main(int argc, char **argv) {
     menu->addAction(quit);
   }
   Player player(page);
+  Lyrics lyrics(page, debug);
   new RootAdaptor(&player, &window);
   new PlayerAdaptor(&player);
   auto bus = QDBusConnection::sessionBus();
@@ -425,9 +450,10 @@ int main(int argc, char **argv) {
   if (!scriptFile.open(QIODevice::ReadOnly))
     qFatal("Missing player bridge resource");
   const QString script = QString::fromUtf8(scriptFile.readAll());
-  QObject::connect(page, &QWebEnginePage::loadStarted, &player, [&player] {
+  QObject::connect(page, &QWebEnginePage::loadStarted, &player, [&player, &lyrics] {
     ++player.navigation;
     player.update(QVariantMap{});
+    lyrics.reset();
   });
   QTimer poll;
   QObject::connect(&poll, &QTimer::timeout, &player, [&] {
@@ -440,10 +466,12 @@ int main(int argc, char **argv) {
     }
     player.pending = true;
     const auto navigation = player.navigation;
-    page->runJavaScript(script, [&player, navigation](const QVariant &v) {
+    page->runJavaScript(script, [&player, &lyrics, navigation](const QVariant &v) {
       player.pending = false;
-      if (navigation == player.navigation)
+      if (navigation == player.navigation) {
         player.update(v);
+        lyrics.update(v.toMap());
+      }
     });
   });
   poll.start(500);
@@ -457,6 +485,7 @@ int main(int argc, char **argv) {
   window.show();
   const int result = app.exec();
   poll.stop();
+  lyrics.reset();
   bus.unregisterObject(busPath);
   bus.unregisterService("org.mpris.MediaPlayer2.ytmusicdesktop");
   // Destroy the page before its profile and before callback receivers

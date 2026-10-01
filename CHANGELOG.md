@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0 — 2026-10-01
+
+- Add a lyrics panel with automatic fallback and a choice of LRCLIB, SimpMusic,
+  KuGou, Lyrics.ovh, Genius, or YouTube Music.
+- Find matching timestamps independently of the selected lyrics provider, with
+  optional scrolling, word highlighting, and seeking by clicking a timed line.
+- Use provider word timestamps when available and estimated word timing for
+  lyrics that only have line timestamps.
+- Improve lookup metadata and title cleanup, retry temporary provider failures,
+  and retain lyrics through end of song duration changes.
+- Style the lyrics dropdown and animation switch to fit YouTube Music.
+- Add optional `--debug` logging and a local development run script. Show lyrics
+  source and timing diagnostics in the panel only when debug mode is enabled.
+
 ## 1.0.0 — 2026-09-10
 
 First stable Qt release. This is the cumulative release changelog from the
