@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.2.0 — 2026-10-09
+
+- Add optional Discord Rich Presence with an off-by-default switch in YouTube
+  Music's General settings. The choice is saved in the local app profile.
+- Show the current track, artist, link, available album art, and a custom
+  fallback image in Discord. Display play and pause badges over the artwork.
+- Show song position as `elapsed / duration` text, updating about every five
+  seconds while playing and remaining fixed while paused. Discord's separate
+  activity clock continues to run.
+- Clear the presence when playback stops, the switch is turned off, or the app
+  exits. Connect through Discord's local IPC without a bot or account login.
+
+## 1.1.0 — 2026-10-01
+
+- Add a lyrics panel with automatic fallback and a choice of LRCLIB, SimpMusic,
+  KuGou, Lyrics.ovh, Genius, or YouTube Music.
+- Find matching timestamps independently of the selected lyrics provider, with
+  optional scrolling, word highlighting, and seeking by clicking a timed line.
+- Use provider word timestamps when available and estimated word timing for
+  lyrics that only have line timestamps.
+- Improve lookup metadata and title cleanup, retry temporary provider failures,
+  and retain lyrics through end of song duration changes.
+- Style the lyrics dropdown and animation switch to fit YouTube Music.
+- Add optional `--debug` logging and a local development run script. Show lyrics
+  source and timing diagnostics in the panel only when debug mode is enabled.
+
 ## 1.0.0 — 2026-09-10
 
 First stable Qt release. This is the cumulative release changelog from the
