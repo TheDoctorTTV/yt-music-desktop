@@ -33,6 +33,7 @@
 #include <QWebEngineView>
 #include <cmath>
 #include "lyrics.h"
+#include "discord.h"
 
 static const QString appId = "net.thedoctorttv.ytmusicdesktop";
 static const QString busPath = "/org/mpris/MediaPlayer2";
@@ -391,6 +392,17 @@ int main(int argc, char **argv) {
           .arg(debug ? "true" : "false") +
       QString::fromUtf8(lyricsFile.readAll()));
   page->scripts().insert(lyricsScript);
+  QFile discordSettingsFile(":/src/discord-settings.js");
+  if (!discordSettingsFile.open(QIODevice::ReadOnly))
+    qFatal("Missing Discord settings script resource");
+  QWebEngineScript discordSettingsScript;
+  discordSettingsScript.setName("YouTube Music Desktop Discord settings");
+  discordSettingsScript.setInjectionPoint(QWebEngineScript::DocumentReady);
+  discordSettingsScript.setWorldId(QWebEngineScript::ApplicationWorld);
+  discordSettingsScript.setRunsOnSubFrames(false);
+  discordSettingsScript.setSourceCode(
+      QString::fromUtf8(discordSettingsFile.readAll()));
+  page->scripts().insert(discordSettingsScript);
   window.setCentralWidget(view);
   page->settings()->setAttribute(
       QWebEngineSettings::PlaybackRequiresUserGesture, false);
@@ -440,6 +452,7 @@ int main(int argc, char **argv) {
   }
   Player player(page);
   Lyrics lyrics(page, debug);
+  DiscordPresence discord;
   new RootAdaptor(&player, &window);
   new PlayerAdaptor(&player);
   auto bus = QDBusConnection::sessionBus();
@@ -450,10 +463,11 @@ int main(int argc, char **argv) {
   if (!scriptFile.open(QIODevice::ReadOnly))
     qFatal("Missing player bridge resource");
   const QString script = QString::fromUtf8(scriptFile.readAll());
-  QObject::connect(page, &QWebEnginePage::loadStarted, &player, [&player, &lyrics] {
+  QObject::connect(page, &QWebEnginePage::loadStarted, &player, [&player, &lyrics, &discord] {
     ++player.navigation;
     player.update(QVariantMap{});
     lyrics.reset();
+    discord.clear();
   });
   QTimer poll;
   QObject::connect(&poll, &QTimer::timeout, &player, [&] {
@@ -462,15 +476,17 @@ int main(int argc, char **argv) {
     if (page->url().host() != "music.youtube.com" &&
         !page->url().isLocalFile()) {
       player.update(QVariantMap{});
+      discord.clear();
       return;
     }
     player.pending = true;
     const auto navigation = player.navigation;
-    page->runJavaScript(script, [&player, &lyrics, navigation](const QVariant &v) {
+    page->runJavaScript(script, [&player, &lyrics, &discord, navigation](const QVariant &v) {
       player.pending = false;
       if (navigation == player.navigation) {
         player.update(v);
         lyrics.update(v.toMap());
+        discord.update(v.toMap());
       }
     });
   });
@@ -486,6 +502,7 @@ int main(int argc, char **argv) {
   const int result = app.exec();
   poll.stop();
   lyrics.reset();
+  discord.clear();
   bus.unregisterObject(busPath);
   bus.unregisterService("org.mpris.MediaPlayer2.ytmusicdesktop");
   // Destroy the page before its profile and before callback receivers

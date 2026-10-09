@@ -1,4 +1,4 @@
-# YouTube Music Desktop 1.1.0
+# YouTube Music Desktop 1.2.0
 
 An unofficial YouTube Music app using **Qt 6 WebEngine (Chromium)** and a native
 Linux MPRIS service. The official website provides browsing, login and playback.
@@ -74,7 +74,7 @@ the app.
 Install the result with:
 
 ```sh
-sudo pacman -U dist/arch/yt-music-desktop-1.1.0-1-x86_64.pkg.tar.zst
+sudo pacman -U dist/arch/yt-music-desktop-1.2.0-1-x86_64.pkg.tar.zst
 ```
 
 The package is named `yt-music-desktop` to avoid colliding with an unrelated AUR
@@ -176,6 +176,35 @@ startup. Desktop widgets can still choose their own display size.
 
 The website bridge is in `src/player.js`. YouTube can change its page structure;
 this adapter may need maintenance. No account credentials are exposed over D-Bus.
+
+## Discord Rich Presence
+
+Open YouTube Music's **Settings → General** and turn on **Discord Rich Presence**.
+The switch is off by default and its choice is saved in the app's YouTube Music
+profile. A running Discord desktop client is required. No Discord sign-in, bot,
+or client secret is needed by the music app.
+
+While a track is playing, Discord receives its title, artist, track link,
+available album art, and song position as `elapsed / duration` text. The position
+updates roughly every five seconds during playback and stays fixed while paused.
+Discord also shows its own activity clock; it cannot display a second independent
+song timer or freeze its native progress bar. The card shows a play or pause
+badge over the album art. Upload
+[`icons/yt-music-playing.png`](icons/yt-music-playing.png) and
+[`icons/yt-music-paused.png`](icons/yt-music-paused.png) to the application's
+**Rich Presence → Art Assets** page in the Discord Developer Portal with the
+exact keys `yt-music-playing` and `yt-music-paused`. The SVG source files are
+beside the PNGs. Their symbols are from [Tabler Icons](https://tabler.io/icons)
+under the MIT license in `icons/TABLER-LICENSE.txt`.
+
+If YouTube Music has not supplied a valid song duration, the card waits.
+Stopping playback, turning the switch off, or quitting clears the
+activity. If YouTube Music has no album art, Discord uses the uploaded Rich
+Presence art asset with key `yt-music-discord-rpc`.
+The integration uses the local Discord IPC socket; it does not send playback
+information to a separate server. The injected settings row is maintained in
+`src/discord-settings.js` and may need updating if YouTube Music changes its
+settings page.
 
 ## Lyrics
 

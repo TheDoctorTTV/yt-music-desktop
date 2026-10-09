@@ -10,6 +10,8 @@
   const lyricsTab = document.querySelector(
     'ytmusic-tab-renderer[page-type="MUSIC_PAGE_TYPE_TRACK_LYRICS"], ' +
     '#tab-renderer[page-type="MUSIC_PAGE_TYPE_TRACK_LYRICS"]');
+  let discordEnabled = false;
+  try { discordEnabled = localStorage.getItem('ytmd-discord-rpc') === 'on'; } catch {}
   if (cover?.src) thumbs.push(cover.src);
   const candidates = [];
   const videoThumbs = [];
@@ -26,6 +28,9 @@
       else candidates.push(u.href);
     } catch {}
   }
+  // Discord can use artwork supplied by YouTube Music, but its generated video
+  // thumbnail guesses should not hide the uploaded fallback asset.
+  const discordArtwork = [...new Set([...candidates, ...videoThumbs])];
   if (/^[\w-]{11}$/.test(id)) {
     candidates.push(`https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
       `https://i.ytimg.com/vi/${id}/hqdefault.jpg`);
@@ -39,11 +44,13 @@
     lyricsTitle: data.video_id === id ? data.title || '' : '',
     lyricsArtist: data.video_id === id ? data.author || '' : '',
     artwork: [...new Set(candidates)],
+    discordArtwork,
     status: !video || video.ended ? 'Stopped' : video.paused ? 'Paused' : 'Playing',
     position: Number.isFinite(video?.currentTime) ? video.currentTime : 0,
     duration: Number.isFinite(video?.duration) ? video.duration : 0,
     volume: video?.volume ?? 1, available: !!video && !!id,
     seeking: !!video?.seeking,
+    discordEnabled,
     lyricsSource: document.querySelector('#ytmd-lyrics-source')?.value || 'auto',
     lyricsOpen: !!lyricsTab?.getClientRects?.().length ||
       !!document.querySelector('#ytmd-standalone-panel[data-open]')

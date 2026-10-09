@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0 — 2026-10-09
+
+- Add optional Discord Rich Presence with an off-by-default switch in YouTube
+  Music's General settings. The choice is saved in the local app profile.
+- Show the current track, artist, link, available album art, and a custom
+  fallback image in Discord. Display play and pause badges over the artwork.
+- Show song position as `elapsed / duration` text, updating about every five
+  seconds while playing and remaining fixed while paused. Discord's separate
+  activity clock continues to run.
+- Clear the presence when playback stops, the switch is turned off, or the app
+  exits. Connect through Discord's local IPC without a bot or account login.
+
 ## 1.1.0 — 2026-10-01
 
 - Add a lyrics panel with automatic fallback and a choice of LRCLIB, SimpMusic,
